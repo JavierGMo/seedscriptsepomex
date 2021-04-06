@@ -41,6 +41,16 @@ def mapeoDeLoNecesario(listaDataEntidades):
             })
     dataNecesaria['data'] = listaTemporal
     return dataNecesaria
+
+#query con llaves foraneas para las relaciones
+def queryInsertConForeignKey(dataLista, nombreTabla, campos):
+    totalEnLista = len(dataLista)-1
+    totalCampos = len(campos)-1
+    cont = 0
+    query = 'INSERT INTO {} ('.format(nombreTabla)
+    print("\n\nEmpezando el query \n\n")
+
+
 # Funcion para hacer los querys de insertar a las tablas, esta funciona para hacer un query de forma general
 def queryInsert(dataLista, nombreTabla, campos):
     totalEnLista = len(dataLista)-1
@@ -65,30 +75,31 @@ def queryInsert(dataLista, nombreTabla, campos):
         cont += 1
     print("\n\n++++++Query : {} +++++++".format(query))
     return query
+
+#Esta obtiene una lista con los datos ya sea de estados, municipios y colonias
+def dataParaLosCampos(listaData, llaveDelDiccionario, llaveParaAgregarALista):
+    mapaConteo = {}
+    listaConLaData = []
+    print("\n\nProceso para: {}\n\n".format(llaveParaAgregarALista))
+    for entidad in listaData:
+        if entidad[llaveDelDiccionario] not in mapaConteo:
+            mapaConteo[entidad[llaveDelDiccionario]] = 1
+            listaConLaData.append(entidad[llaveParaAgregarALista])
+    #print(mapaConteo)
+    #print(listaConLaData)
+    return listaConLaData
 #Esta funcion obtiene todos los datos sin repetir para poder hacer los querys
 def insertarDatosTablas(dataMapaEntidades):
-    mapaConteo = {}
-    listaEstados = []
-    listaMunicipios = []
-    listaColonias = []
-    listaCPs = []
     print("Haciendo el diccionario de entidades")
-    for entidad in dataMapaEntidades:
-        if entidad["claveestado"] not in dataMapaEntidades:
-            mapaConteo["claveestado"] = 1
-            listaEstados.append(entidad["estado"])
-        if entidad["claveestado"] not in dataMapaEntidades:
-            mapaConteo["claveestado"] = 1
-            listaMunicipios.append(entidad["municipio"])
-        if entidad["idcolonia"] not in dataMapaEntidades:
-            mapaConteo["idcolonia"] = 1
-            listaColonias.append(entidad["colonia"])
-        if entidad["cp"] not in dataMapaEntidades:
-            mapaConteo["cp"] = 1
-            listaCPs.append(entidad["cp"])
-        print("Procesando...")
+    listaEstados = dataParaLosCampos(dataMapaEntidades, "claveestado", "estado")
+    print(listaEstados)
+    listaMunicipios = dataParaLosCampos(dataMapaEntidades, "clavemunicipio", "municipio")
+    print(listaMunicipios)
+    listaColonias = dataParaLosCampos(dataMapaEntidades, "idcolonia", "colonia")
+    listaCPs = dataParaLosCampos(dataMapaEntidades, "cp", "cp")
     
-    queryEstados = queryInsert(listaEstados, 'estado', ['id, nombre'])
+    #Querys
+    #queryEstados = queryInsert(listaEstados, 'estado', ['id, nombre'])
     #queryMunicipios = queryInsert(listaEstado, 'estado', ['id, nombre, idestado'])
 #Funcion para escribir en el sql
 def escribirSQL(dataMapeo):
@@ -158,15 +169,10 @@ def escrituraArchivoDB(dataMapeo):
         hilo.join()
 
     
-
-
-    
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Escribir la ruta de su archivo
     dataLimpia = lecturaSEPOMEX('./sepomex.txt')
-    
+
     #print(dataLimpia)
     dataDelMapeo = mapeoDeLoNecesario(dataLimpia)
     #print(dataDelMapeo)
