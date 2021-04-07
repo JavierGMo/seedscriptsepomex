@@ -1,6 +1,8 @@
 # Obtener datos limpios de SEPOMEX
 ## Requisitos:
 - python 3.x
+
+
 Nota: Este script se corrio en windows 10 y ubuntu. Este script trabaja bajo parametros muy especificos y tiene resultados muy especificos, pero se puede modificar para obtener la data que requieras o requieran.
 
 Este script funciona con base en los datos de SEPOMEX, para este script se utilizo el txt, este txt solo debe de tener algunas modificaciones, las cuales son borrar cosas que no nos sirven y que solo estorbaria y producirian errores en el script, dichas lineas que se deben de quitar son las siguientes:
