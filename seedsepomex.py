@@ -42,22 +42,16 @@ def mapeoDeLoNecesario(listaDataEntidades):
     dataNecesaria['data'] = listaTemporal
     return dataNecesaria
 
-#query con llaves foraneas para las relaciones
-def queryInsertConForeignKey(dataLista, nombreTabla, campos):
-    totalEnLista = len(dataLista)-1
+#query con llaves foraneas para las relaciones: lista de la tabla a llenar, "", "", lista de los campos a los que se quiere acceder para obtener los valores de cada entidad
+#la entidad es un diccionario y estos diccionarios vienen de la funcion dataParaLosCampos
+def queryInsertConForeignKey(dataListaPrincipal, nombreTabla, campos, listaDeCampos):
+    totalEnListaPrincipal = len(dataListaPrincipal)-1
+    totalCamposValor = len(listaDeCampos)-1
     totalCampos = len(campos)-1
     cont = 0
+    contListaPrincipal = 0
     query = 'INSERT INTO {} ('.format(nombreTabla)
-    print("\n\nEmpezando el query \n\n")
-
-
-# Funcion para hacer los querys de insertar a las tablas, esta funciona para hacer un query de forma general
-def queryInsert(dataLista, nombreTabla, campos):
-    totalEnLista = len(dataLista)-1
-    totalCampos = len(campos)-1
-    cont = 0
-    query = 'INSERT INTO {} ('.format(nombreTabla)
-    print("\n\nEmpezando el query \n\n")
+    print("\n\nEmpezando el query para {}\n\n".format(nombreTabla))
     #Ciclo para sacar mapear los campos de la tabla
     for campo in campos:
         if cont != totalCampos:
@@ -66,14 +60,57 @@ def queryInsert(dataLista, nombreTabla, campos):
             query += '{}) VALUES '.format(campo)
         cont += 1
     cont = 0
+    #Recorremos la lista para la tabla que se quiere hacer
+    # hacemos otra iteracion dentro del bucle para poder acceder a los datos y poder rellenar la informacion que necesitamos
+    for entidad in dataListaPrincipal:
+        query += '('
+        for campo in listaDeCampos:
+            if cont != totalCamposValor:
+                query += '"{}",'.format(str(entidad[campo]).replace('"', '\\\"'))
+            else:
+                query += '"{}")'.format(str(entidad[campo]).replace('"', '\\\"'))
+            cont += 1
+        cont = 0
+        if contListaPrincipal != totalEnListaPrincipal:
+            query += ','
+        else:
+            query += ';'
+        contListaPrincipal += 1
+    return query
+
+
+# Funcion para hacer los querys de insertar a las tablas, esta funciona para hacer un query de forma general
+def queryInsert(dataLista, nombreTabla, campos):
+    totalEnLista = len(dataLista)
+    totalCampos = len(campos)-1
+    cont = 0
+    query = 'INSERT INTO {} ('.format(nombreTabla)
+    print("\n\nEmpezando el query \n\n")
+    #Ciclo para sacar mapear los campos de la tabla
+    if totalCampos == 0:
+        query += '{}) VALUES '.format(campos[0])
+    else:
+        for campo in campos:
+            if cont != totalCampos:
+                query += '{}, '.format(campo)
+            else:
+                query += '{}) VALUES '.format(campo)
+            cont += 1
+    cont = 1
     #Ciclo para mapear los campos en el query a sql
     for i in dataLista:
         if cont != totalEnLista:
-            query += '(0, {}),'.format(i)
+            if totalCampos == 0:
+                query += '({}),'.format(str(i["claveprincipal"]))
+            else:
+                query += '({}, "{}"),'.format(i["claveprincipal"], str(i["data"]).replace('"', '\\\"'))
         else:
-            query += '(0, {});'.format(i)
+            if totalCampos == 0:
+                query += '({});'.format(i["claveprincipal"])
+            else:
+                query += '({}, "{}");'.format(i["claveprincipal"], str(i["data"]).replace('"', '\\\"'))
         cont += 1
-    print("\n\n++++++Query : {} +++++++".format(query))
+    #print("\n\n++++++Query : {} +++++++".format(query))
     return query
 
 #Esta obtiene una lista con los datos ya sea de estados, municipios y colonias
@@ -84,45 +121,60 @@ def dataParaLosCampos(listaData, llaveDelDiccionario, llaveParaAgregarALista):
     for entidad in listaData:
         if entidad[llaveDelDiccionario] not in mapaConteo:
             mapaConteo[entidad[llaveDelDiccionario]] = 1
-            listaConLaData.append(entidad[llaveParaAgregarALista])
+            listaConLaData.append({
+                "claveprincipal" : entidad[llaveDelDiccionario],
+                "data" : entidad[llaveParaAgregarALista],
+                "claveedo" : entidad["claveestado"],
+                "clavemunicipio" : entidad["clavemunicipio"],
+                "clavecolonia" : entidad["idcolonia"],
+                "clavecp" : entidad["cp"]
+                
+            })
     #print(mapaConteo)
     #print(listaConLaData)
     return listaConLaData
 #Esta funcion obtiene todos los datos sin repetir para poder hacer los querys
+#Regresa una lista de querys
 def insertarDatosTablas(dataMapaEntidades):
     print("Haciendo el diccionario de entidades")
     listaEstados = dataParaLosCampos(dataMapaEntidades, "claveestado", "estado")
-    print(listaEstados)
     listaMunicipios = dataParaLosCampos(dataMapaEntidades, "clavemunicipio", "municipio")
-    print(listaMunicipios)
+    #print(listaMunicipios)
     listaColonias = dataParaLosCampos(dataMapaEntidades, "idcolonia", "colonia")
     listaCPs = dataParaLosCampos(dataMapaEntidades, "cp", "cp")
     
     #Querys
-    #queryEstados = queryInsert(listaEstados, 'estado', ['id, nombre'])
+    queryEstados = queryInsert(listaEstados, 'estado', ['id', 'nombre'])
+    queryMunicipio = queryInsertConForeignKey(listaMunicipios, 'municipio', ['id', 'nombre', 'idestado'], ['claveprincipal', 'data', "claveedo"])
+    queryColonia = queryInsertConForeignKey(listaColonias, 'colonia', ['id', 'nombre', 'idmunicipio', 'idcp'], ['claveprincipal', 'data', 'clavemunicipio', 'clavecp'])
+    querysCps = queryInsert(listaCPs, 'codigopostal', ['id'])
+    
     #queryMunicipios = queryInsert(listaEstado, 'estado', ['id, nombre, idestado'])
+    return [queryEstados, querysCps, queryMunicipio, queryColonia]
 #Funcion para escribir en el sql
 def escribirSQL(dataMapeo):
+    # si solo se requieren las tablas puede borrar el create database y el use
     queryCreateTables = """
+    CREATE DATABASE sepomex;
+    USE sepomex;
     CREATE TABLE IF NOT EXISTS estado (
-        id int(10) NOT NULL AUTO_INCREMENT,
+        id int(10) NOT NULL,
         nombre varchar(60) NOT NULL,
         PRIMARY KEY (id)
     );\n
     CREATE TABLE IF NOT EXISTS codigopostal (
-        id int NOT NULL AUTO_INCREMENT,
-        cp varchar(20) NOT NULL,
+        id int NOT NULL,
         PRIMARY KEY (id)
     );\n
     CREATE TABLE IF NOT EXISTS municipio (
-        id int(10) NOT NULL AUTO_INCREMENT,
+        id int(10) NOT NULL,
         nombre varchar(60) NOT NULL,
         idestado int(10) NOT NULL,
         PRIMARY KEY (id),
         FOREIGN KEY(idestado) REFERENCES estado(id) ON DELETE CASCADE ON UPDATE CASCADE
     );\n
     CREATE TABLE IF NOT EXISTS colonia (
-        id int(10) NOT NULL AUTO_INCREMENT,
+        id int(10) NOT NULL,
         nombre varchar(60) NOT NULL,
         idmunicipio int(10) NOT NULL,
         idcp int(10)NOT NULL,
@@ -131,9 +183,11 @@ def escribirSQL(dataMapeo):
         FOREIGN KEY(idcp) REFERENCES codigopostal(id) ON DELETE CASCADE ON UPDATE CASCADE
     );\n
     """
-    with open('scripbssepomex.sql', 'a+') as archivosql:
+    with open('scriptdbsepomex.sql', 'a+') as archivosql:
         archivosql.write(queryCreateTables)
-        insertarDatosTablas(dataMapeo)
+        listaquerys = insertarDatosTablas(dataMapeo)
+        for query in listaquerys:
+            archivosql.write("{}\n\n".format(query))
     print("Escritura en SQL lista \n")
 
 #Escribimos en un JSON
