@@ -1,9 +1,15 @@
 # Obtener datos limpios de SEPOMEX
+## Clona este proyecto
+
+Clonar con: `git clone https://github.com/JavierGMo/seedscriptsepomex`
+
 ## Requisitos:
 - python 3.x
 
 
-Nota: Este script se corrio en windows 10 y ubuntu. Este script trabaja bajo parametros muy especificos y tiene resultados muy especificos, pero se puede modificar para obtener la data que requieras o requieran.
+Nota 1: Este script se corrio en windows 10 y ubuntu. Este script trabaja bajo parametros muy especificos y tiene resultados muy especificos, pero se puede modificar para obtener la data que requieras o requieran.
+
+Nota 2: Si se hace la importacion desde un gui para bd como phpmyadmin, entonces primero cree la base de datos con el nombre sepomex y despues importe solo las tablas y la data de estas tablas ya que esto se probo desde phpmyadmin y hubo algunos errores al momento de crear las tablas y llenarlas.
 
 Este script funciona con base en los datos de SEPOMEX, para este script se utilizo el txt, este txt solo debe de tener algunas modificaciones, las cuales son borrar cosas que no nos sirven y que solo estorbaria y producirian errores en el script, dichas lineas que se deben de quitar son las siguientes:
 
